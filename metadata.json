@@ -1,0 +1,6 @@
+{
+  "name": "Omni-Vuln Scanner: OSINT Threat Intelligence",
+  "description": "Herramienta SOC de auditoría y análisis OSINT de vulnerabilidades tecnológicas con generación de informes Blue Team con IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
