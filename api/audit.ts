@@ -1,8 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
 
-// Inicializar Gemini
+// 1. EL CARNET DE IDENTIDAD ORIGINAL DE AI STUDIO
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
 });
 
 function parseTechQuery(input: string) {
@@ -104,8 +105,8 @@ export default async function handler(req: any, res: any) {
     let success = false;
     let lastError = '';
     
-    // AQUÍ ESTÁ LA MAGIA: Usamos los modelos exactos que tu cuenta soporta
-    const candidateModels = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash-latest'];
+    // 2. LA RULETA DE MODELOS DE ÚLTIMA GENERACIÓN (Los mismos de tu código original)
+    const candidateModels = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
 
     for (const modelName of candidateModels) {
       try {
