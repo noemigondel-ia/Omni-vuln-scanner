@@ -95,22 +95,36 @@ export default async function handler(req: any, res: any) {
     let maxScore = cvesList.reduce((max: number, c: any) => c.cvssScore > max ? c.cvssScore : max, 0);
 
     let rawCveContext = cvesList.length > 0
-      ? cvesList.map((c: any, i) => `${i + 1}. ID: ${c.id}\n- CVSS: ${c.cvssScore}\n- Resumen: ${c.summary}`).join('\n')
+      ? cvesList.map((c: any, i) => `${i + 1}. ID:${c.id}\n- CVSS: ${c.cvssScore}\n- Resumen:${c.summary}`).join('\n')
       : `No hay resultados directos. Analiza los CVEs emblemáticos para: ${cleanInput}`;
 
-    const aiUserPrompt = `Eres un Analista Blue Team. Analiza estos CVEs de: "${cleanInput}".\n\nDATOS CRUDOS:\n${rawCveContext}\n\nGenera un informe en Markdown con: Resumen Ejecutivo, Detalles Técnicos, Vectores de Ataque y Plan de Remediación.`;
+    const aiUserPrompt = `Eres un Analista Blue Team. Analiza estos CVEs de: "${cleanInput}".\n\nDATOS CRUDOS:\n${rawCveContext}\n\nGenera un informe en Markdown con: Resumen Ejecutivo, Detalles Técnicos, Vectores de Ataque y Plan de Remediación. Redacta de forma muy profesional.`;
 
     let markdownOutput = '';
-    try {
-      const geminiResponse = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents: aiUserPrompt,
-        config: { temperature: 0.3 }
-      });
-      markdownOutput = geminiResponse.text || '# Informe Generado';
-    } catch (e: any) {
-      // AQUÍ ESTÁ EL CHIVATO: Imprimirá el error real en la pantalla
-      markdownOutput = `# Informe de Contingencia: ${cleanInput}\n\n⚠️ **Error de Google Gemini detectado:**\n\n\`${e.message || JSON.stringify(e)}\`\n\nLa IA no ha podido procesar el reporte.`;
+    let success = false;
+    let lastError = '';
+    
+    // Lista de modelos modernos y de respaldo
+    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
+
+    for (const modelName of candidateModels) {
+      try {
+        const geminiResponse = await ai.models.generateContent({
+          model: modelName,
+          contents: aiUserPrompt,
+          config: { temperature: 0.3 }
+        });
+        markdownOutput = geminiResponse.text || '# Informe Generado';
+        success = true;
+        break; // Si funciona, detiene el bucle
+      } catch (e: any) {
+        lastError = e.message || 'Error desconocido';
+        // Falla en silencio y pasa al siguiente modelo
+      }
+    }
+
+    if (!success) {
+      markdownOutput = `# Informe de Contingencia: ${cleanInput}\n\n⚠️ **Error de API detectado:**\nNinguno de los modelos intentados está disponible. Último error: \`${lastError}\``;
     }
 
     const duration = Date.now() - startTime;
