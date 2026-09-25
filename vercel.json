@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/audit",
+      "destination": "/server.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
