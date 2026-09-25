@@ -3,12 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 // Inicializar Gemini
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
 });
-
-interface CVEItem {
-  id: string; source: string; cvssScore: number; severity: string; summary: string; publishedDate?: string; references?: string[]; cwe?: string[];
-}
 
 function parseTechQuery(input: string) {
   const trimmed = input.trim();
@@ -76,9 +71,7 @@ async function fetchOSV(name: string, version: string) {
   }
 }
 
-// ESTA ES LA FUNCIÓN NATIVA DE VERCEL (Sin Express)
 export default async function handler(req: any, res: any) {
-  // Asegurarnos de que Vercel acepte solo la petición de envío (POST)
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed. Se requiere POST.' });
   }
@@ -86,10 +79,8 @@ export default async function handler(req: any, res: any) {
   const startTime = Date.now();
   const { techInput } = req.body || {};
 
-  if (!techInput) {
-    return res.status(400).json({ error: 'Debes proporcionar el nombre y versión de una tecnología.' });
-  }
-
+  if (!techInput) return res.status(400).json({ error: 'Falta nombre.' });
+  
   const cleanInput = techInput.trim();
   const { name, version } = parseTechQuery(cleanInput);
 
@@ -104,10 +95,10 @@ export default async function handler(req: any, res: any) {
     let maxScore = cvesList.reduce((max: number, c: any) => c.cvssScore > max ? c.cvssScore : max, 0);
 
     let rawCveContext = cvesList.length > 0
-      ? cvesList.map((c: any, i) => `${i + 1}. Identificador: ${c.id}\n- Puntuación CVSS: ${c.cvssScore}\n- Resumen: ${c.summary}`).join('\n')
-      : `NOTA: No se obtuvieron resultados directos en NVD/OSV. Actúa con tu contingencia de analista Blue Team y analiza los CVEs emblemáticos para: ${cleanInput}`;
+      ? cvesList.map((c: any, i) => `${i + 1}. ID: ${c.id}\n- CVSS: ${c.cvssScore}\n- Resumen: ${c.summary}`).join('\n')
+      : `No hay resultados directos. Analiza los CVEs emblemáticos para: ${cleanInput}`;
 
-    const aiUserPrompt = `Eres un Analista Senior de Seguridad (Blue Team). Analiza estos CVEs encontrados para el componente: "${cleanInput}".\n\nDATOS CRUDOS:\n${rawCveContext}\n\nGenera un informe en formato Markdown con: Resumen Ejecutivo, Detalles Técnicos, Vectores de Ataque y Plan de Remediación. Redacta de forma profesional.`;
+    const aiUserPrompt = `Eres un Analista Blue Team. Analiza estos CVEs de: "${cleanInput}".\n\nDATOS CRUDOS:\n${rawCveContext}\n\nGenera un informe en Markdown con: Resumen Ejecutivo, Detalles Técnicos, Vectores de Ataque y Plan de Remediación.`;
 
     let markdownOutput = '';
     try {
@@ -117,8 +108,9 @@ export default async function handler(req: any, res: any) {
         config: { temperature: 0.3 }
       });
       markdownOutput = geminiResponse.text || '# Informe Generado';
-    } catch (e) {
-      markdownOutput = `# Informe de Contingencia: ${cleanInput}\n\nNo se pudo procesar la respuesta de la IA en este momento, revisar las métricas CVSS listadas.`;
+    } catch (e: any) {
+      // AQUÍ ESTÁ EL CHIVATO: Imprimirá el error real en la pantalla
+      markdownOutput = `# Informe de Contingencia: ${cleanInput}\n\n⚠️ **Error de Google Gemini detectado:**\n\n\`${e.message || JSON.stringify(e)}\`\n\nLa IA no ha podido procesar el reporte.`;
     }
 
     const duration = Date.now() - startTime;
@@ -132,6 +124,6 @@ export default async function handler(req: any, res: any) {
       markdownReport: markdownOutput
     });
   } catch (err: any) {
-    return res.status(500).json({ error: 'Error interno del servidor OSINT.', details: err.message });
+    return res.status(500).json({ error: 'Error interno del servidor.', details: err.message });
   }
 }
