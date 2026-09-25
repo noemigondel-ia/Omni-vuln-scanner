@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/audit",
-      "destination": "/server.ts"
+      "destination": "/api/server.ts"
     },
     {
       "source": "/(.*)",
