@@ -104,8 +104,8 @@ export default async function handler(req: any, res: any) {
     let success = false;
     let lastError = '';
     
-    // Lista de modelos modernos y de respaldo
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
+    // AQUÍ ESTÁ LA MAGIA: Usamos los modelos exactos que tu cuenta soporta
+    const candidateModels = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash-latest'];
 
     for (const modelName of candidateModels) {
       try {
@@ -116,10 +116,9 @@ export default async function handler(req: any, res: any) {
         });
         markdownOutput = geminiResponse.text || '# Informe Generado';
         success = true;
-        break; // Si funciona, detiene el bucle
+        break; 
       } catch (e: any) {
         lastError = e.message || 'Error desconocido';
-        // Falla en silencio y pasa al siguiente modelo
       }
     }
 
